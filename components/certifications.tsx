@@ -246,6 +246,7 @@ const certifications = [
 ]
 
 const CredentialIdDisplay = ({ credentialId }: { credentialId: string }) => {
+  const [showTooltip, setShowTooltip] = useState(false)
   const isLongId = credentialId.length > 15
 
   if (!isLongId) {
@@ -254,17 +255,25 @@ const CredentialIdDisplay = ({ credentialId }: { credentialId: string }) => {
 
   const truncatedId = `${credentialId.substring(0, 12)}...`
 
+  const handleInfoClick = () => {
+    setShowTooltip(!showTooltip)
+  }
+
   return (
     <div className="text-xs text-gray-400 text-center relative group">
       <span>Credential ID: {truncatedId}</span>
       <span
-        className="ml-1 cursor-help text-blue-500 hover:text-blue-600 transition-colors"
-        title={`Credential ID: ${credentialId}`}
+        className="ml-1 cursor-pointer text-blue-500 hover:text-blue-600 transition-colors"
+        onClick={handleInfoClick}
       >
         🛈
       </span>
 
-      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 shadow-lg max-w-xs break-all">
+      <div
+        className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 shadow-lg max-w-xs break-all ${
+          showTooltip ? "opacity-100" : ""
+        }`}
+      >
         <div className="whitespace-normal">Credential ID: {credentialId}</div>
         <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
       </div>
@@ -275,6 +284,7 @@ const CredentialIdDisplay = ({ credentialId }: { credentialId: string }) => {
 export default function Certifications() {
   const [visibleItems, setVisibleItems] = useState<number[]>([])
   const [showAllCertifications, setShowAllCertifications] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
   const itemRefs = useRef<(HTMLDivElement | null)[]>([])
 
   useEffect(() => {
@@ -297,6 +307,18 @@ export default function Certifications() {
     return () => observer.disconnect()
   }, [])
 
+  useEffect(() => {
+    if (showAllCertifications) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = "unset"
+    }
+
+    return () => {
+      document.body.style.overflow = "unset"
+    }
+  }, [showAllCertifications])
+
   const displayedCertifications = certifications.slice(0, 9)
   const hasMoreCertifications = certifications.length > 9
 
@@ -304,6 +326,15 @@ export default function Certifications() {
     if (url) {
       window.open(url, "_blank", "noopener,noreferrer")
     }
+  }
+
+  const handleCloseModal = () => {
+    setIsClosing(true)
+    // Use setTimeout to handle animation completion reliably
+    setTimeout(() => {
+      setShowAllCertifications(false)
+      setIsClosing(false)
+    }, 300) // Match the animation duration
   }
 
   return (
@@ -327,26 +358,24 @@ export default function Certifications() {
                   : "scale-95 opacity-0 translate-y-8"
               }`}
             >
-              <div className="bg-white rounded-2xl p-6 shadow-lg shadow-gray-200/50 hover:shadow-2xl hover:shadow-blue-200/30 transition-all duration-500 hover:-translate-y-2 hover:scale-105 h-full border border-gray-100 hover:border-blue-200 group">
+              <div className="bg-white rounded-2xl p-6 shadow-lg shadow-gray-200/50 hover:shadow-xl transition-all duration-300 hover:scale-105 h-full border border-gray-100 group">
                 <div className="text-center mb-4">
                   <div className="text-4xl mb-3 transform group-hover:scale-110 transition-transform duration-300">
                     {cert.icon}
                   </div>
                   <h3
-                    className={`text-lg font-bold text-gray-900 mb-2 transition-colors duration-300 ${
+                    className={`text-lg font-bold text-gray-900 mb-2 transition-all duration-300 relative overflow-hidden ${
                       cert.url ? "cursor-pointer hover:text-blue-600 hover:underline" : ""
                     }`}
                     onClick={() => handleCertificateClick(cert.url)}
                   >
                     {cert.name}
                   </h3>
-                  <p className="text-blue-600 font-medium mb-1 group-hover:text-blue-700 transition-colors duration-300">
-                    {cert.issuer}
-                  </p>
-                  <p className="text-gray-500 text-sm mb-3">Issued: {cert.date}</p>
+                  <p className="text-blue-600 font-medium mb-1 transition-colors duration-300">{cert.issuer}</p>
+                  <p className="text-gray-500 text-sm mb-3 transition-colors duration-300">Issued: {cert.date}</p>
                 </div>
 
-                <div className="border-t border-gray-100 pt-4">
+                <div className="border-t border-gray-100 transition-colors duration-300 pt-4">
                   <CredentialIdDisplay credentialId={cert.credentialId} />
                 </div>
               </div>
@@ -366,47 +395,58 @@ export default function Certifications() {
         )}
 
         {showAllCertifications && (
-          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-            <div className="bg-white/95 backdrop-blur-md rounded-3xl max-w-6xl max-h-[90vh] overflow-y-auto p-8 w-full shadow-2xl border border-white/20 animate-scale-in">
-              <div className="flex justify-between items-center mb-8">
+          <div
+            className={`fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center p-4 z-50 ${
+              isClosing ? "animate-fade-out" : "animate-fade-in"
+            }`}
+          >
+            <button
+              onClick={handleCloseModal}
+              className="fixed top-8 right-8 w-12 h-12 bg-blue-600 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xl font-bold transition-all duration-300 hover:scale-110 hover:shadow-xl z-[60] shadow-lg"
+            >
+              <span className="leading-none flex items-center justify-center w-full h-full">×</span>
+            </button>
+
+            <div
+              className={`bg-white/95 backdrop-blur-md rounded-3xl max-w-6xl max-h-[90vh] overflow-y-auto w-full shadow-2xl border border-white/20 relative ${
+                isClosing ? "animate-scale-out" : "animate-scale-in"
+              }`}
+            >
+              <div className="sticky top-0 bg-white/95 backdrop-blur-md p-8 pb-4 border-b border-gray-200/50">
                 <h3 className="text-3xl font-bold text-gray-900 animate-fade-in-up">All Certifications</h3>
-                <button
-                  onClick={() => setShowAllCertifications(false)}
-                  className="text-gray-500 hover:text-gray-700 text-3xl font-bold w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100/80 transition-all duration-300 hover:scale-110 hover:rotate-90"
-                >
-                  ×
-                </button>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {certifications.map((cert, index) => (
-                  <div
-                    key={index}
-                    className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 hover:bg-white/90 transition-all duration-300 hover:scale-105 hover:shadow-lg border border-gray-200/50 group"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <div className="text-center mb-3">
-                      <div className="text-3xl mb-2 transform group-hover:scale-110 transition-transform duration-300">
-                        {cert.icon}
+              <div className="p-8 pt-4">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {certifications.map((cert, index) => (
+                    <div
+                      key={index}
+                      className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 transition-all duration-300 hover:scale-105 hover:shadow-lg border border-gray-200/50 group"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <div className="text-center mb-3">
+                        <div className="text-3xl mb-2 transform group-hover:scale-110 transition-transform duration-300">
+                          {cert.icon}
+                        </div>
+                        <h4
+                          className={`text-base font-bold text-gray-900 mb-1 transition-all duration-300 relative overflow-hidden ${
+                            cert.url ? "cursor-pointer hover:text-blue-600 hover:underline" : ""
+                          }`}
+                          onClick={() => handleCertificateClick(cert.url)}
+                        >
+                          {cert.name}
+                        </h4>
+                        <p className="text-blue-600 font-medium text-sm mb-1 transition-colors duration-300">
+                          {cert.issuer}
+                        </p>
+                        <p className="text-gray-500 text-xs mb-2 transition-colors duration-300">Issued: {cert.date}</p>
                       </div>
-                      <h4
-                        className={`text-base font-bold text-gray-900 mb-1 transition-colors duration-300 ${
-                          cert.url ? "cursor-pointer hover:text-blue-600 hover:underline" : ""
-                        }`}
-                        onClick={() => handleCertificateClick(cert.url)}
-                      >
-                        {cert.name}
-                      </h4>
-                      <p className="text-blue-600 font-medium text-sm mb-1 group-hover:text-blue-700 transition-colors duration-300">
-                        {cert.issuer}
-                      </p>
-                      <p className="text-gray-500 text-xs mb-2">Issued: {cert.date}</p>
+                      <div className="border-t border-gray-200 transition-colors duration-300 pt-2">
+                        <CredentialIdDisplay credentialId={cert.credentialId} />
+                      </div>
                     </div>
-                    <div className="border-t border-gray-200 pt-2">
-                      <CredentialIdDisplay credentialId={cert.credentialId} />
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>

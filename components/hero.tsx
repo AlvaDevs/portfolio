@@ -19,7 +19,7 @@ export default function Hero() {
         >
           <div className="mb-8">
             <div className="w-32 h-32 mx-auto mb-6 rounded-full shadow-2xl shadow-blue-500/25 overflow-hidden">
-              <img src="/profile-photo.JPEG" alt="Profile photo" className="w-full h-full object-cover" />
+              <img src="/profile-photo.jpg" alt="Profile photo" className="w-full h-full object-cover" />
             </div>
           </div>
 
